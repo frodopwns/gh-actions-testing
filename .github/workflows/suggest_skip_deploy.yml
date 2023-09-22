@@ -16,7 +16,8 @@ jobs:
     - name: Check for non-critical file changes
       id: check_files
       run: |
-        GO_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} -- | grep -v '_test.go' | grep -v '.yml' | grep -v '.md')
+        GO_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} -- | grep -E -v '(_test\.go$|\.yml$|\.md$)') || true
+        echo "Changed files: $GO_FILES"
         if [ "$GO_FILES" == "" ]; then
           echo "Only _test.go files or non-Go files have changed.";
           echo "::set-output name=suggest_skip::true";
