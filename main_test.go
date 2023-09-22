@@ -5,7 +5,7 @@ import (
 )
 
 func TestSay(t *testing.T) {
-	s := say("Hello, World!")
+	s := say("Hello, World!!")
 	if s != "Hello, World!" {
 		t.Error("Expected 'Hello, World!', got ", s)
 	}
