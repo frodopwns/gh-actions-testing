@@ -1,0 +1,38 @@
+name: Suggest Skip Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Check for non-critical file changes
+      id: check_files
+      run: |
+        GO_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- '*.go' | grep -v '_test.go')
+        if [ "$GO_FILES" == "" ]; then
+          echo "Only _test.go files or non-Go files have changed.";
+          echo "::set-output name=suggest_skip::true";
+        else
+          echo "::set-output name=suggest_skip::false";
+        fi
+
+    - name: Post skip-deploy suggestion if appropriate
+      if: steps.check_files.outputs.suggest_skip == 'true'
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          const message = "It seems like only `_test.go` files or non-Go files have changed. Consider merging with the `[skip-deploy]` flag if no deployment is needed.";
+          github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prNumber,
+            body: message
+          });
